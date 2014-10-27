@@ -5,7 +5,7 @@ Player ::Player(){
 	attackAction=NULL;
 	hurtAction=NULL;
 	deadAction=NULL;
-	CCLog("in player");
+	
 }
 
 Player::~Player(){}

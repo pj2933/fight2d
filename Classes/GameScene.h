@@ -11,6 +11,7 @@ public :
 	CREATE_FUNC(GameScene);
 	//游戏层的get/set
 	CC_SYNTHESIZE(GameLayer*, gameLayer, GameLayer);
+	//操作层的get/set
 	CC_SYNTHESIZE(OperateLayer*,operateLayer,OperateLayer);
 };
 

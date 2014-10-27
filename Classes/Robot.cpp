@@ -49,7 +49,7 @@ void Robot::strategy(Point target){
 	switch(aiState){
 	case ROBOT_AI_STATE_ATTACK:
 		this->attack();
-		this->onAttack(this);
+		this->onAttack();
 		excutedTime=60;
 		break;
 	case ROBOT_AI_STATE_FOLLOW:

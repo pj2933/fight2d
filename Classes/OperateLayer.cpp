@@ -77,7 +77,7 @@ void OperateLayer::inactivityJoystick(){
 
 void OperateLayer::updateJoystick(Point direction, float distance){
 	Point bgPoint=joystick_bg->getPosition();
-	//摇杆在基座里面
+	//当手指移出摇杆，摇柄不能超出基座
 	if(distance<64){
 		joystick->setPosition(bgPoint+direction*distance);
 	}

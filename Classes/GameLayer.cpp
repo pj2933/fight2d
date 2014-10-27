@@ -1,20 +1,21 @@
 #include "GameLayer.h"
 #include "GameConfig.h"
+#include "DataManager.h"
+#include "GameScene.h"
 //GameLayer初始化
 bool GameLayer::init(){
 	if(!Layer::init()){
 		return false;
 	}
-	
+	auto dataManager=DataManager::getInstance();
 	//加载地图
 	map=TMXTiledMap::create("pd_tilemap.tmx");
 	this->addChild(map);
-	
+
 	//将图片序列资源加载到缓存中
 	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("pd_sprites.plist");
-	actor=SpriteBatchNode::create("pd_sprites.pvr.ccz");
-	this->addChild(actor);
-	actor->retain();
+	dataManager->setAtk(10);
+	dataManager->setHP(100);
 	hero=Hero::create();
 	hero->setPosition(SCREEN.width/10,SCREEN.height/4);
 	hero->idle();
@@ -32,6 +33,7 @@ bool GameLayer::init(){
 	this->scheduleUpdate();
 	return true;
 }
+
 void GameLayer::onWalk(Point direction,float distance){
 	//根据摇杆 改变人物朝向
 	if(hero->getCurrentState()!=ACTION_STATE_DEAD)
@@ -44,22 +46,24 @@ void GameLayer::onStop(){
 	 hero->idle();
 }
 void GameLayer::onAttack(){
-		hero->attack();
-
+	hero->attack();
+		/*char a[30];
+		printf(a,"%d",(int)hero->getHP());
+		CCLog(a);*/
+	if(hero->getCurrentState()==ACTION_STATE_DEAD)
+		return;
 	Object *object = NULL;
 
 	CCARRAY_FOREACH(robots, object) {
         Robot *robot = (Robot*)object;
-
+		auto dataManager=DataManager::getInstance();
         if (Collision(hero, robot)) {
             robot->hurt();
-			robot->setHP(robot->getHP() - hero->getAttack());
+			robot->setHP(robot->getHP() - dataManager->getAtk());
 			float hp=robot->getHP();
-			char a[30];
-			sprintf(a,"%d",(int)hp);
-			CCLog(a);
+	
             if (robot->getHP() <= 0) {
-                // 延时是为了等待knockout
+                // 延时是为了等待dead
                 DelayTime *delay = DelayTime::create(1);
                 Blink *blink = Blink::create(1, 4);
 				CallFunc *remove = CallFunc::create(std::bind(&GameLayer::RemoveRobot, this, robot));
@@ -91,17 +95,18 @@ void GameLayer::update(float dt){
         }
 		hero->setPosition(actual);
         //调整z轴位置，防止出现反常的遮盖
-		hero->setZOrder(120-hero->getPositionY());
+		hero->setLocalZOrder(200-hero->getPositionY());
 	}
 	updateRobots();
 }
 
 void GameLayer::addRobot(){
 	Robot *robot=Robot ::create();
-	robot->onAttack= std::bind(&GameLayer::RobotAttack, this, robot);
+	robot->onAttack = std::bind(&GameLayer::onRobotAttack, this, robot);
 	Point location;
-	
+	//在英雄周围随机生成机器人
 	location.x=hero->getPositionX()+CCRANDOM_MINUS1_1()*SCREEN.width/1.5;
+	//若是这个点超出地图范围，则移进来
 	location.x=(location.x<30)?(SCREEN.width+location.x):location.x;
 	location.x=(location.x>(MAX_POSITION_X-30))?(location.x-SCREEN.width):location.x;
 
@@ -112,16 +117,16 @@ void GameLayer::addRobot(){
 	robot->setPosition(location);
 	robot->idle();
 	robots->addObject(robot);
-	actor->addChild(robot);
+	this->addChild(robot);
 }
-void GameLayer::RobotAttack(Player *robot){
+void GameLayer::onRobotAttack(Player *robot){
+	auto dataManager=DataManager::getInstance();
 	if (Collision(robot, hero)) {
-        hero->setHP(hero->getHP() - robot->getAttack());
-		char a[30];
-		printf(a,"%d",(int)hero->getHP());
-		CCLog(a);
-        if (hero->getHP() <= 0) {
+		dataManager->setHP(dataManager->getHP() - robot->getAttack());
+        if (dataManager->getHP() <= 0) {
             hero->dead();
+			//英雄死亡游戏结束
+			endgame();
         } else {
             hero->hurt();
         }
@@ -142,19 +147,7 @@ void GameLayer::updateRobots(){
             continue;
         }
 		if(robot->getCurrentState()==ACTION_STATE_WALK){
-		/*	Point expect=robot->getPosition()+robot->getDirection();
-			Point actual=expect;
-			if(expect.x>MAX_POSITION_X-30)
-				actual.x=MAX_POSITION_X-30;
-			if(expect.x<MIN_POSITION_X+30)
-				actual.x=MIN_POSITION_X+30;
-			if(expect.y<40||expect.y>SCREEN.height/2.7){
-			actual.y=hero->getPosition().y;
-			robot->setFlipX(robot->getDirection().x < 0 ? true : false);
-			robot->setPosition(actual);
-			robot->setZOrder(120-robot->getPositionY());
-			}
-			*/
+		
 			Point location = robot->getPosition();
             Point direction = robot->getDirection();
             Point expect = location + direction;
@@ -164,7 +157,8 @@ void GameLayer::updateRobots(){
             robot->setFlipX(direction.x < 0 ? true : false);
 			
             robot->setPosition(location + direction);
-            robot->setZOrder(robot->getPositionY());
+			//调整位置防止出现错误遮盖
+			robot->setLocalZOrder(200-robot->getPositionY());
 
 
 	}
@@ -173,7 +167,7 @@ void GameLayer::updateRobots(){
 void GameLayer::RemoveRobot(Player *robot)
 {
     robots->removeObject(robot);
-    actor->removeChild(robot, true);
+    this->removeChild(robot, true);
 }
 
 
@@ -183,10 +177,43 @@ bool GameLayer::Collision(Sprite *attacker,Sprite *target){
 	Point offset=attackerLocation-targetLocation;
 	bool isFlipX=attacker->isFlipX();
 	bool isTargetLeft=(attackerLocation.x<targetLocation.x)?true:false;
+	//没有翻转的“攻击者”可以打到其右边的单位，反之打到左边
 	if((!isFlipX&&isTargetLeft)||(isFlipX&&!isTargetLeft)){
 		if(abs(offset.x)<=65&&abs(offset.y)<=35)
 			return true;
 	}
 	return false;
 
+}
+void GameLayer::endgame(){
+	Object *object=NULL;
+	
+	CCARRAY_FOREACH(robots,object){
+		Robot *robot=(Robot*) object;
+		robot->idle();
+	}
+	auto closeItem = MenuItemImage::create(
+                                           "again_off.png",
+                                           "again_on.png",
+										   CC_CALLBACK_1(GameLayer::menuRestartCallback, this));
+	float locX=hero->getPositionX();
+	if(hero->getPositionX()<SCREEN.width/2)
+	{
+		locX=SCREEN.width/2;
+	}
+	if(hero->getPositionX()>map->getContentSize().width-SCREEN.width/2){
+		locX=map->getContentSize().width-SCREEN.width/2;
+	}
+	closeItem->setPosition(locX,SCREEN.height/2);
+	auto menu = Menu::create(closeItem, NULL);
+    menu->setPosition(Vec2::ZERO);
+    this->addChild(menu, 500);
+}
+void GameLayer::menuRestartCallback(Ref* pSender)
+{
+	auto director=Director::getInstance();
+	auto scene = GameScene::create();
+
+    // run
+	director->replaceScene(scene);
 }

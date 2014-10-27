@@ -1,7 +1,6 @@
 #include"Hero.h"
 
-Hero::Hero(){
-	CCLog("in Hero");}
+Hero::Hero(){}
 Hero::~Hero(){}
 bool Hero::init(){
 	if(!Player::initWithSpriteFrameName("hero_idle_00.png")){
@@ -31,8 +30,7 @@ bool Hero::init(){
      Animation *dead = createAnimation("hero_knockout_%02d.png", 5, 12);
 	 setDeadAction(Sequence::create(Animate::create(dead), NULL));
 
-	 setHP(100);
-	 setAttack(10);
+	 
 	 setSpeed(2);
 	 return true;
 }	

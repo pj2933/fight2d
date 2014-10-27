@@ -35,11 +35,11 @@ private:
     // 摇杆，分为“摇杆”、“摇杆基座”两个部分
     cocos2d::Sprite *joystick;
     cocos2d::Sprite *joystick_bg;
-    // 激活“摇杆精灵”，并更新其坐标
+    // 激活“摇杆”，并更新其坐标
     void activityJoystick(cocos2d::Point position);
-    // 隐藏“摇杆精灵”，并将“摇杆”置于“摇杆基座”中心
+    // 隐藏“摇杆”，并将“摇杆”置于“基座”中心
     void inactivityJoystick();
-    // 刷新“摇杆”相对于“摇杆基座”的位置（根据触控手势）
+    // 刷新“摇杆”相对于“基座”的位置（根据触控手势）
     void updateJoystick(cocos2d::Point direction, float distance);
 };
 #endif

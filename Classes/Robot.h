@@ -22,7 +22,8 @@ public:
     CREATE_FUNC(Robot);
 	void strategy(Point target);
 	void execute(Point target);
-	std::function<void(Robot*)> onAttack;
+	//std::function<void(void)> onAttack;
+	std::function<void(void)> onAttack;
 	//void onAttack(Player *hero);
 	CC_SYNTHESIZE(RobotAIState,aiState,AIState);
 	CC_SYNTHESIZE(Point,direction,Direction);
