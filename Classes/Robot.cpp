@@ -7,7 +7,7 @@ bool Robot::init(){
 	CallFunc *callbackIdle = CallFunc::create(std::bind(&Robot::idle, this));
 	
 	//¿ÕÏÐ
-	Animation *idle = createAnimation("robot_idle_%02d.png", 5, 10);
+	Animation *idle = createAnimation("robot_idle_%02d.png", 5, 12);
     setIdleAction(RepeatForever::create(Animate::create(idle)));
 	//ÐÐ×ß
 	Animation *walk = createAnimation("robot_walk_%02d.png", 6, 18);
@@ -27,7 +27,7 @@ bool Robot::init(){
 	setAttack(15);
 	setHP(40);
 	setAIState(ROBOT_AI_STATE_WAIT);
-	excutedTime=25;
+	excutedTime=0;
 	return true;
 }
 void Robot::strategy(Point target){
@@ -45,12 +45,12 @@ void Robot::strategy(Point target){
 		else 
 			aiState=ROBOT_AI_STATE_WAIT;
 	}
-	float directionX;
+	float directionX=0;
 	switch(aiState){
 	case ROBOT_AI_STATE_ATTACK:
 		this->attack();
 		this->onAttack();
-		excutedTime=60;
+		excutedTime=50;
 		break;
 	case ROBOT_AI_STATE_FOLLOW:
 		this->walk();
@@ -69,7 +69,7 @@ void Robot::strategy(Point target){
 		break;
 	case ROBOT_AI_STATE_WAIT:
 		this->idle();
-		excutedTime=30;
+		excutedTime=10;
 		break;
 	}
 }

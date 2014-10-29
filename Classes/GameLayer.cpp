@@ -14,9 +14,11 @@ bool GameLayer::init(){
 
 	//将图片序列资源加载到缓存中
 	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("pd_sprites.plist");
+	
 	dataManager->setAtk(10);
 	dataManager->setHP(100);
 	hero=Hero::create();
+	hero->setCurrentState(ACTION_STATE_NONE);
 	hero->setPosition(SCREEN.width/10,SCREEN.height/4);
 	hero->idle();
 	this->addChild(hero);
@@ -61,7 +63,7 @@ void GameLayer::onAttack(){
             robot->hurt();
 			robot->setHP(robot->getHP() - dataManager->getAtk());
 			float hp=robot->getHP();
-	
+			
             if (robot->getHP() <= 0) {
                 // 延时是为了等待dead
                 DelayTime *delay = DelayTime::create(1);
@@ -103,7 +105,7 @@ void GameLayer::update(float dt){
 void GameLayer::addRobot(){
 	Robot *robot=Robot ::create();
 	robot->onAttack = std::bind(&GameLayer::onRobotAttack, this, robot);
-	Point location;
+	Point location=Point::ZERO;
 	//在英雄周围随机生成机器人
 	location.x=hero->getPositionX()+CCRANDOM_MINUS1_1()*SCREEN.width/1.5;
 	//若是这个点超出地图范围，则移进来
@@ -114,8 +116,10 @@ void GameLayer::addRobot(){
 	if(location.y<MIN_POSITION_Y){
 		location.y=MIN_POSITION_Y;
 	}
-	robot->setPosition(location);
+	robot->setCurrentState(ACTION_STATE_NONE);
 	robot->idle();
+	robot->setPosition(location);
+	
 	robots->addObject(robot);
 	this->addChild(robot);
 }
@@ -126,6 +130,7 @@ void GameLayer::onRobotAttack(Player *robot){
         if (dataManager->getHP() <= 0) {
             hero->dead();
 			//英雄死亡游戏结束
+
 			endgame();
         } else {
             hero->hurt();
@@ -142,10 +147,10 @@ void GameLayer::updateRobots(){
 	CCARRAY_FOREACH(robots,object){
 		Robot *robot=(Robot*) object;
 		robot->execute(hero->getPosition());
-		if (robot->getCurrentState() == ACTION_STATE_DEAD) {
+		/*if (robot->getCurrentState() == ACTION_STATE_DEAD) {
             robots->removeObject(object);
             continue;
-        }
+        }*/
 		if(robot->getCurrentState()==ACTION_STATE_WALK){
 		
 			Point location = robot->getPosition();
@@ -186,6 +191,7 @@ bool GameLayer::Collision(Sprite *attacker,Sprite *target){
 
 }
 void GameLayer::endgame(){
+	this->pauseSchedulerAndActions();
 	Object *object=NULL;
 	
 	CCARRAY_FOREACH(robots,object){
@@ -213,7 +219,6 @@ void GameLayer::menuRestartCallback(Ref* pSender)
 {
 	auto director=Director::getInstance();
 	auto scene = GameScene::create();
-
     // run
 	director->replaceScene(scene);
 }

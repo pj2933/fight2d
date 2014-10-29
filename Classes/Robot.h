@@ -6,7 +6,7 @@
 USING_NS_CC;
 
 #define ROBOT_VIEW_FIELD 150
-#define ROBOT_ATTACK_FIELD 50
+#define ROBOT_ATTACK_FIELD 35
 
 //»úÆ÷ÈËAI
 typedef enum{
